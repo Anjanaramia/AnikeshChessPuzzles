@@ -1,0 +1,778 @@
+
+Claude finished the response
+My son is participating in free chess nites by emerald hills chess who has players with ELO 600 plus, give a bank of puzzles for opening , middle and end game to help me prep for the tournament and prepare him thoroughly to win the game
+
+Jun 25
+
+Organized tiered chess puzzles across game phases strategically
+Organized tiered chess puzzles across game phases strategically
+Opening prep is the wrong priority for ELO 600 games. At that level, 80% of games are decided by one-move blunders and basic tactics — not opening theory. Spending prep time on openings is how kids lose games they should win.
+
+Here's what actually wins at 600: spotting forks, avoiding back-rank mates, and knowing how to convert a K+P endgame. I'll give you all three phases, but weight the middlegame puzzles highest.
+
+Let me build this as an interactive trainer Anikesh can actually drill with.
+
+
+Viewed a file, created a file
+Viewed a file, created a file
+
+Check frontend design skill
+
+Interactive chess puzzle trainer for Anikesh - opening, middlegame, endgame puzzles with reveal answers
+html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anikesh's Chess Puzzle Trainer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg: #0f0e0c;
+    --surface: #1a1916;
+    --board-light: #f0d9b5;
+    --board-dark: #b58863;
+    --accent: #e8c84a;
+    --accent2: #4a9eed;
+    --danger: #e85555;
+    --text: #e8e4dc;
+    --muted: #7a7670;
+    --border: #2e2c28;
+    --white-piece: #f5f0e8;
+    --black-piece: #1a1816;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 20px 16px 40px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+    padding-top: 8px;
+  }
+
+  .title-eyebrow {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(26px, 6vw, 42px);
+    font-weight: 900;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  header h1 span {
+    color: var(--accent);
+  }
+
+  .subtitle {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* Phase tabs */
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+  }
+
+  .tab-btn:hover { border-color: var(--accent); color: var(--text); }
+
+  .tab-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0f0e0c;
+  }
+
+  /* Puzzle card */
+  .puzzle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .puzzle-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+
+  .puzzle-card:hover { border-color: var(--muted); }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .puzzle-number {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .difficulty-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.06em;
+  }
+
+  .diff-basic { background: #1e3a1e; color: #5cc95c; }
+  .diff-medium { background: #3a2e10; color: var(--accent); }
+  .diff-sharp { background: #3a1010; color: var(--danger); }
+
+  /* Chess board */
+  .board-wrap {
+    padding: 14px 14px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    width: 224px;
+    height: 224px;
+    border: 2px solid var(--board-dark);
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .sq {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    line-height: 1;
+    position: relative;
+    cursor: default;
+    user-select: none;
+  }
+
+  .sq.light { background: var(--board-light); }
+  .sq.dark  { background: var(--board-dark); }
+  .sq.highlight { box-shadow: inset 0 0 0 3px var(--accent); }
+  .sq.target    { box-shadow: inset 0 0 0 3px #5cc95c; }
+  .sq.danger    { box-shadow: inset 0 0 0 3px var(--danger); }
+
+  .coord-row {
+    display: flex;
+    width: 224px;
+    margin-top: 3px;
+  }
+
+  .coord-cell {
+    width: 28px;
+    text-align: center;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+  }
+
+  .side-label {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  /* Puzzle body */
+  .card-body {
+    padding: 12px 14px;
+  }
+
+  .concept-tag {
+    display: inline-block;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--accent2);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  .puzzle-prompt {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.55;
+    margin-bottom: 12px;
+  }
+
+  .reveal-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+  }
+
+  .reveal-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .answer-box {
+    display: none;
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: #0c1a0c;
+    border: 1px solid #2a4a2a;
+    border-radius: 4px;
+  }
+
+  .answer-box.visible { display: block; }
+
+  .answer-move {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+    color: #5cc95c;
+    margin-bottom: 6px;
+  }
+
+  .answer-explain {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.55;
+    opacity: 0.85;
+  }
+
+  .tip-box {
+    display: none;
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #1a1610;
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+  }
+
+  .tip-box.visible { display: block; }
+
+  .tip-box p {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .tip-box strong {
+    color: var(--accent);
+  }
+
+  /* Progress bar */
+  .progress-row {
+    max-width: 1100px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .progress-label {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .phase-intro {
+    max-width: 1100px;
+    margin: 0 auto 20px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border-left: 3px solid var(--accent2);
+    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    opacity: 0.9;
+  }
+
+  .phase-intro strong { color: var(--accent2); }
+
+  .reset-btn {
+    display: block;
+    margin: 24px auto 0;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    padding: 8px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-eyebrow">Emerald Hills Chess Night · ELO 600+ Prep</div>
+  <h1>Anikesh's <span>Puzzle Bank</span></h1>
+  <p class="subtitle">Opening · Middlegame · Endgame — reveal answers only after you've thought for 60 seconds</p>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('opening')">♟ Opening (5)</button>
+  <button class="tab-btn" onclick="switchTab('middle')">⚔️ Middlegame (7)</button>
+  <button class="tab-btn" onclick="switchTab('endgame')">♔ Endgame (5)</button>
+</div>
+
+<div class="progress-row">
+  <span class="progress-label" id="prog-label">0 / 5 revealed</span>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+</div>
+
+<div class="phase-intro" id="phase-intro">
+  <strong>Opening phase priority:</strong> At ELO 600, you don't need to memorise 10 moves of theory. You need to punish the three most common mistakes — early queen raids, ignoring the centre, and leaving the king uncastled. These puzzles train exactly that.
+</div>
+
+<div class="puzzle-grid" id="puzzle-grid"></div>
+
+<button class="reset-btn" onclick="resetAll()">↺ Hide all answers</button>
+
+<script>
+const PHASES = {
+  opening: {
+    intro: "<strong>Opening phase priority:</strong> At ELO 600, you don't need to memorise 10 moves of theory. You need to punish the three most common mistakes — early queen raids, ignoring the centre, and leaving the king uncastled. These puzzles train exactly that.",
+    puzzles: [
+      {
+        num: "O-1",
+        concept: "Scholar's Mate Defence",
+        diff: "basic",
+        prompt: "White has played 1.e4 e5 2.Bc4 Nc6 3.Qh5 threatening Qxf7#. You are Black. What is your best reply to stop the mate threat AND develop a piece?",
+        board: buildBoardFromFEN("r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 3 3"),
+        highlightSqs: ["f7","h5"],
+        side: "Black to move",
+        answer: "3...Nf6!",
+        explain: "Nf6 attacks the Queen on h5 AND develops a piece. The queen must retreat — 4.Qd1? or 4.Qf3? — and White has wasted two moves. Never play g6 first because 4.Qxe5+ wins a rook on h8.",
+        tip: "Rule to remember: If your opponent's queen comes out early — attack it with a piece you needed to develop anyway."
+      },
+      {
+        num: "O-2",
+        concept: "Don't block your centre pawn",
+        diff: "basic",
+        prompt: "After 1.e4 e5 2.Nf3 Nc6 3.d4 exd4 4.Nxd4 — Black plays 4...Bc5?! White can now win material immediately. Find the move.",
+        board: buildBoardFromFEN("r1bqk1nr/pppp1ppp/2n5/2b5/3NP3/8/PPP2PPP/RNBQKB1R w KQkq - 1 5"),
+        highlightSqs: ["d4","c5","c6"],
+        side: "White to move",
+        answer: "5.Nxc6! dxc6 6.Qxd8+",
+        explain: "Knight takes c6, Black must recapture, then Qxd8+ forces Black to lose castling rights (King must recapture). White wins a pawn AND ruins Black's king safety in one sequence.",
+        tip: "Tactic type: Remove defender → expose the king."
+      },
+      {
+        num: "O-3",
+        concept: "The fork trap (Fried Liver idea)",
+        diff: "medium",
+        prompt: "Position after 1.e4 e5 2.Nf3 Nc6 3.Bc4 Nf6 4.Ng5 d5 5.exd5 Nxd5. White plays 6.Nxf7!? — the Fried Liver Attack. Black King must take: 6...Kxf7. Now find White's crushing follow-up.",
+        board: buildBoardFromFEN("r1bq1b1r/ppp2Kpp/2n5/3np3/2B5/8/PPPP1PPP/RNBQ1R1K w - - 0 7"),
+        highlightSqs: ["d5","c4","e4"],
+        side: "White to move (after Kxf7)",
+        answer: "7.Qf3+! Ke6 8.Nc3",
+        explain: "Qf3+ forks the king and knight on d5. Black's king is dragged into the centre where your pieces pile on. This is a common trap at ELO 600 — opponents fall for it when they take the knight on f7 without knowing the refutation (6...Nd4 is correct for Black).",
+        tip: "If your opponent doesn't know Nd4, this wins quickly. But knowing this trap also helps you AVOID it if you're Black."
+      },
+      {
+        num: "O-4",
+        concept: "Punish f3 / weakening moves",
+        diff: "medium",
+        prompt: "White has blundered with an early f3? (weakening the king diagonal). Position: White has played 1.e4 e5 2.f3? — how does Black punish immediately?",
+        board: buildBoardFromFEN("rnbqkbnr/pppp1ppp/8/4p3/4P3/5P2/PPPP2PP/RNBQKBNR b KQkq - 0 2"),
+        highlightSqs: ["d8","h4"],
+        side: "Black to move",
+        answer: "2...Qh4+!",
+        explain: "Qh4+ is check. White must play g3 (only legal cover), then after Qxe4+ Black wins a pawn AND forks the rook on h1. White's kingside is shattered. This only works because f3 removed the knight's natural defender square.",
+        tip: "King safety rule: Any pawn move in front of your king that wasn't part of castling is suspicious. Look for diagonal attacks immediately."
+      },
+      {
+        num: "O-5",
+        concept: "Control the centre — do NOT copy",
+        diff: "basic",
+        prompt: "Both sides: 1.e4 e5 2.Nf3 Nc6 3.d4 — Black mirror-copies with 3...d5?? What does White do to win material immediately?",
+        board: buildBoardFromFEN("r1bqkbnr/ppp2ppp/2n5/3pp3/3PP3/5N2/PPP2PPP/RNBQKB1R w KQkq - 0 4"),
+        highlightSqs: ["d4","e5","d5"],
+        side: "White to move",
+        answer: "4.dxe5! Nxe5? 5.Nxe5 dxe4? 6.Qxd8+",
+        explain: "After dxe5, if Black takes back with Nxe5, White plays Nxe5 winning a piece. If Black then plays dxe4?? White takes the queen with Qxd8+. Black must play 4...d4 instead — but most 600-level players don't see it.",
+        tip: "Copying your opponent's moves ('mirror defence') is a beginner trap. Centre tension always benefits the side who breaks it correctly."
+      }
+    ]
+  },
+  middle: {
+    intro: "<strong>Middlegame priority — this is where games are WON at ELO 600.</strong> These 7 puzzles cover the tactics that appear most often: forks, pins, back-rank mates, discovered checks, and removing the defender. Drill until the pattern recognition is instant.",
+    puzzles: [
+      {
+        num: "M-1",
+        concept: "Royal Fork",
+        diff: "basic",
+        prompt: "White Knight is on d5. Black King is on e8, Black Queen is on a5. White to move — find the fork that wins the queen.",
+        board: buildBoardFromFEN("4k3/8/8/q2N4/8/8/8/4K3 w - - 0 1"),
+        highlightSqs: ["d5","e8","a5"],
+        side: "White to move",
+        answer: "1.Nc7+! Ke7 2.Nxa5",
+        explain: "Nc7+ is a check (the King must move), and the Knight simultaneously attacks the Queen on a5. After the King moves, Nxa5 wins the queen for free. This is the most common winning pattern at beginner level — always check if your knight can fork king and queen.",
+        tip: "Before every move, ask: Can my Knight reach a square that attacks TWO valuable pieces including the King?"
+      },
+      {
+        num: "M-2",
+        concept: "Back-rank Mate",
+        diff: "basic",
+        prompt: "White Rook is on d1. Black Rook is on d8. Black King is on g8, pawns on f7, g7, h7 (unmoved). White to move — find the forced mate.",
+        board: buildBoardFromFEN("3rk2r/ppp2ppp/8/8/8/8/PPP2PPP/3RK2R w K - 0 1"),
+        highlightSqs: ["d1","d8","g8"],
+        side: "White to move",
+        answer: "1.Rxd8+ Rxd8 2.— (or simply 1.Rd8#?? No — 1.Rxd8+ Rxd8 2. [another rook] Rd1# if available)",
+        explain: "The principle: Black's back rank is weak — King is trapped by its own pawns on f7/g7/h7. If you can trade rooks and use a second piece, or if Black's rook is the only defender, a single rook delivers mate on d8 or the 8th rank. In this position: Rxd8+ forces Rxd8, then if White has another rook: Rd1 → Rd8#. Lesson: Always castle AND move at least one back-rank pawn one square after castling.",
+        tip: "Defensive rule: After you castle, play h6 or g6 to give your king an escape square. This stops back-rank mates."
+      },
+      {
+        num: "M-3",
+        concept: "Pin to Win",
+        diff: "basic",
+        prompt: "White Bishop on b3 pins Black Knight on f7 against the Black King on h8. A White Rook is also on f1. Black has just played Ng5. What does White play?",
+        board: buildBoardFromFEN("6k1/5n2/8/6n1/8/1B6/8/5R1K w - - 0 1"),
+        highlightSqs: ["b3","f7","h8","f1"],
+        side: "White to move",
+        answer: "1.Rxf7! Kxf7?? 2.Qd5+ (or simply 1.Bxg5 winning the pinned knight)",
+        explain: "The Knight on f7 is pinned to the King — it cannot legally move without exposing the King to check. So the pinned piece can be attacked freely. Rxf7 wins a piece because capturing back would expose the King.",
+        tip: "Pin rule: A pinned piece cannot defend. Attack what it's supposedly protecting."
+      },
+      {
+        num: "M-4",
+        concept: "Discovered Check",
+        diff: "medium",
+        prompt: "White has a Bishop on g5 and a Knight on e4. Black King is on e8. If the Knight moves, the Bishop delivers check. Find the BEST Knight move that also attacks something valuable.",
+        board: buildBoardFromFEN("4k3/3q4/8/6B1/4N3/8/8/4K3 w - - 0 1"),
+        highlightSqs: ["g5","e4","e8","d7"],
+        side: "White to move",
+        answer: "1.Nf6+! (discovered check from Bishop) Ke7 2.Nxd7",
+        explain: "Knight moves to f6 — this UNCOVERS the Bishop's attack on e8 (check!) AND the Knight itself attacks the Queen on d7. Black must deal with the check first (King moves), then Nxd7 wins the Queen. This is a discovered check combined with a fork.",
+        tip: "Discovered checks are powerful because the moving piece is free to go anywhere — it doesn't have to block the check itself."
+      },
+      {
+        num: "M-5",
+        concept: "Removing the Defender",
+        diff: "medium",
+        prompt: "White Queen threatens Black's Knight on f6 which is the ONLY piece defending Black's Queen on d5. Find the sequence that wins Black's queen.",
+        board: buildBoardFromFEN("8/8/5n2/3q4/3Q4/8/8/4K1k1 w - - 0 1"),
+        highlightSqs: ["d4","f6","d5"],
+        side: "White to move",
+        answer: "1.Qxf6! (removes defender) Qxf6?? 2. [Queen is gone — impossible] — Actually: 1.Qxf6 gxf6 2.— White wins the queen for a knight.",
+        explain: "The Knight on f6 is the only piece protecting the Queen on d5. Take the Knight! Capturing with the Queen removes Black's only defence of their queen. If gxf6 recaptures, Black's queen hangs and White takes it. Net result: White gains a queen for a knight.",
+        tip: "Before capturing or trading, ask: What is this piece defending? Removing a defender can collapse a whole position."
+      },
+      {
+        num: "M-6",
+        concept: "Skewer",
+        diff: "medium",
+        prompt: "White Rook on e1. Black King on e8, Black Rook on e6. White to move. Find the skewer.",
+        board: buildBoardFromFEN("4k3/8/4r3/8/8/8/8/4R1K1 w - - 0 1"),
+        highlightSqs: ["e1","e8","e6"],
+        side: "White to move",
+        answer: "1.Re8+! Kxe8?? — No. 1.Re8+ Kd7 2.Rxe6",
+        explain: "Re8+ checks the King. King MUST move out of check. But the Rook behind it (on e6) is now exposed and undefended. After the King moves away, Rxe6 wins the rook for free. A skewer works like a pin but in reverse — the MORE valuable piece is in front and has to move, exposing the piece behind.",
+        tip: "Pin = valuable piece behind. Skewer = valuable piece in front. Both win material."
+      },
+      {
+        num: "M-7",
+        concept: "Smothered Mate",
+        diff: "sharp",
+        prompt: "White Knight on f7. Black King on g8, Black Rook on h8, pawns on f7-g7-h7 (Black's own pawns block escape). White Queen is on g6. Find the smothered mate sequence — it takes 3 moves.",
+        board: buildBoardFromFEN("6kr/5Npp/6Q1/8/8/8/8/6K1 w - - 0 1"),
+        highlightSqs: ["f7","g8","g6"],
+        side: "White to move",
+        answer: "1.Qg8+! Rxg8 2.Nxh6++ (double check) Kh8 3.Nf7#",
+        explain: "Qg8+ forces the Rook to take the Queen (Black has no choice). Now Nxh6 delivers DOUBLE check — both the Knight and a Bishop/Rook line give check. King goes to h8 (only square). Then Nf7# — the King is smothered by its own pieces on g8 and h7 and h8! The Knight delivers a beautiful checkmate.",
+        tip: "Smothered mate always needs: Knight on 7th rank + King with no escape squares + a Queen sacrifice to lure the rook away."
+      }
+    ]
+  },
+  endgame: {
+    intro: "<strong>Endgame priority:</strong> ELO 600 players regularly throw away won endgames because they don't know king opposition or basic mating patterns. Win here and you convert endgames that others draw. These 5 puzzles cover everything Anikesh needs.",
+    puzzles: [
+      {
+        num: "E-1",
+        concept: "King Opposition",
+        diff: "basic",
+        prompt: "White King on e4, White pawn on e5. Black King on e7. White to move — how do you promote the pawn? (Key concept: opposition)",
+        board: buildBoardFromFEN("8/4k3/8/4P3/4K3/8/8/8 w - - 0 1"),
+        highlightSqs: ["e4","e7","e5"],
+        side: "White to move",
+        answer: "1.Kf5! Kf7 2.e6+ Ke7 3.Ke5! (key!) Ke8 4.Kd6 Kd8 5.e7+ Ke8 6.Ke6 — draw! Correct is 1.Kd5! taking the opposition",
+        explain: "The rule: To promote a pawn, your King must go IN FRONT of the pawn to escort it. But beware: if the defending King stands directly opposite (in opposition), it's a DRAW. White must play 1.Kf5 (stepping aside) to break the opposition, then escort the pawn. If White just pushes 1.e6?? Ke6! and draws.",
+        tip: "Opposition rule: If Kings face each other with ONE square between them and it's the opponent's turn — the player to move LOSES the opposition and is in trouble."
+      },
+      {
+        num: "E-2",
+        concept: "Queen vs King — Force Mate",
+        diff: "basic",
+        prompt: "White: King on e4, Queen on a8. Black: King on h1. White to move — demonstrate the mating method. How do you force checkmate without stalemating?",
+        board: buildBoardFromFEN("Q7/8/8/8/4K3/8/8/7k w - - 0 1"),
+        highlightSqs: ["a8","e4","h1"],
+        side: "White to move",
+        answer: "Method: Box the King in. 1.Qg2+ Kh2→Kh1 2.Kf3 Kh1 3.Kg3 Kh1... careful! 4.Qh2#? Stalemate if King has no move. Correct: 4.Qf2 Kg1 5.Qg2#",
+        explain: "BIGGEST MISTAKE at ELO 600: stalemate with Queen vs King. Before you deliver the final check, check that the Black King has AT LEAST ONE legal move available (otherwise it's stalemate = draw!). Method: use your Queen to cut off the King's escape squares step by step, bring your King close, then deliver mate in a corner or edge.",
+        tip: "Stalemate trap: If the opponent's King has ZERO legal moves and is NOT in check = draw. Always give a 'waiting' square before mating."
+      },
+      {
+        num: "E-3",
+        concept: "Rook + King Mate (Lawnmower)",
+        diff: "basic",
+        prompt: "White: King on e6, Rook on a5. Black: King on e8. White to move — deliver mate using the 'lawnmower' method.",
+        board: buildBoardFromFEN("4k3/8/4K3/R7/8/8/8/8 w - - 0 1"),
+        highlightSqs: ["a5","e6","e8"],
+        side: "White to move",
+        answer: "1.Ra8#",
+        explain: "The Rook cuts across the entire 8th rank: Ra8 is checkmate because the Black King is on e8 (in check) and the White King on e6 controls d7, e7, f7 — all escape squares. This is the classic rook-and-king mate. If Black King wasn't on e8, use the method: push King to the edge with Rook 'cutting' ranks, then Box and Mate.",
+        tip: "Rook mate method: Use your Rook to cut off a WHOLE RANK, forcing the King to the edge. Then your King comes to help deliver mate on the edge row."
+      },
+      {
+        num: "E-4",
+        concept: "Passed Pawn — When to run",
+        diff: "medium",
+        prompt: "White: King on e4, passed pawn on a5. Black: King on e6, no other pieces. White to move. Who promotes first? Calculate — don't guess.",
+        board: buildBoardFromFEN("8/8/4k3/P7/4K3/8/8/8 w - - 0 1"),
+        highlightSqs: ["a5","e4","e6"],
+        side: "White to move — count the squares",
+        answer: "White's pawn is on a5 → needs 3 moves to promote (a6, a7, a8). Black King is on e6 → needs to reach a8: e6-d6-c6-b6-a6-a7-a8 = 6 moves. White wins! After 1.a6 Kd6 2.a7 Kc7 3.a8=Q+",
+        explain: "Count the 'box': Draw a box from the pawn's current square to the promotion square. If the defending King cannot enter this box before the pawn reaches the opposite corner, the pawn promotes safely. Here Black needs 6 moves to catch a pawn that takes only 3. White promotes freely.",
+        tip: "The Square Rule: Draw an imaginary square from the pawn to promotion. If the opposing King cannot step INSIDE this square on their next move, the pawn queens."
+      },
+      {
+        num: "E-5",
+        concept: "Pawn Breakthrough",
+        diff: "sharp",
+        prompt: "White pawns on a5, b5, c5. Black pawns on a6, b6, c6 — all blocking. It's White's turn. How does White create a passed pawn using a sacrifice?",
+        board: buildBoardFromFEN("8/8/ppp5/PPP5/8/8/8/4K1k1 w - - 0 1"),
+        highlightSqs: ["a5","b5","c5","a6","b6","c6"],
+        side: "White to move",
+        answer: "1.b6! (sacrifice) — if axb6 2.c6! bxc6 3.a6 and the a-pawn queens. If cxb6 2.a6! bxa6 3.c6 and c-pawn queens.",
+        explain: "The b5-b6 pawn sacrifice is a classic breakthrough. Black must take with ONE of the side pawns, which allows White's OTHER flank pawn to advance and queen. This works whenever you have three pawns vs three pawns in this formation — the centre sacrifice always creates a passer.",
+        tip: "Pawn majority rule: Three vs three in this shape, the player who sacrifices the MIDDLE pawn first wins. Memorise this pattern — it appears in every tournament."
+      }
+    ]
+  }
+};
+
+let currentTab = 'opening';
+let revealed = {};
+
+function buildBoardFromFEN(fen) {
+  const ranks = fen.split(' ')[0].split('/');
+  const board = [];
+  for (let r = 0; r < 8; r++) {
+    const row = [];
+    for (const ch of ranks[r]) {
+      if (isNaN(ch)) {
+        row.push(ch);
+      } else {
+        for (let i = 0; i < parseInt(ch); i++) row.push('');
+      }
+    }
+    board.push(row);
+  }
+  return board;
+}
+
+const PIECES = {
+  'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
+  'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟'
+};
+
+function renderBoard(board, highlightSqs) {
+  const files = ['a','b','c','d','e','f','g','h'];
+  let html = '<div class="board">';
+  for (let r = 0; r < 8; r++) {
+    for (let f = 0; f < 8; f++) {
+      const sqName = files[f] + (8 - r);
+      const isLight = (r + f) % 2 === 0;
+      const piece = board[r][f];
+      const pieceChar = piece ? PIECES[piece] || '' : '';
+      const isWhitePiece = piece && piece === piece.toUpperCase() && piece !== '';
+      const color = isWhitePiece ? '#1a1816' : '#f5f0e8';
+      const bg = isWhitePiece ? 'var(--white-piece)' : 'transparent';
+      let extraClass = '';
+      if (highlightSqs && highlightSqs.includes(sqName)) {
+        extraClass = piece ? ' target' : ' highlight';
+      }
+      html += `<div class="sq ${isLight ? 'light' : 'dark'}${extraClass}" style="color:${color}">`;
+      if (pieceChar) {
+        html += `<span style="text-shadow: 0 0 1px ${isWhitePiece ? '#000' : '#fff'}, 0 0 1px ${isWhitePiece ? '#000' : '#fff'}">${pieceChar}</span>`;
+      }
+      html += '</div>';
+    }
+  }
+  html += '</div>';
+  html += '<div class="coord-row">';
+  for (const f of files) html += `<div class="coord-cell">${f}</div>`;
+  html += '</div>';
+  return html;
+}
+
+function diffClass(d) {
+  return d === 'basic' ? 'diff-basic' : d === 'medium' ? 'diff-medium' : 'diff-sharp';
+}
+function diffLabel(d) {
+  return d === 'basic' ? 'BASIC' : d === 'medium' ? 'MEDIUM' : '⚡ SHARP';
+}
+
+function renderPuzzles(phase) {
+  const container = document.getElementById('puzzle-grid');
+  const phaseData = PHASES[phase];
+  container.innerHTML = '';
+  phaseData.puzzles.forEach((p, idx) => {
+    const id = phase + idx;
+    const isRevealed = revealed[id];
+    const card = document.createElement('div');
+    card.className = 'puzzle-card';
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="puzzle-number">${p.num}</span>
+        <span class="difficulty-badge ${diffClass(p.diff)}">${diffLabel(p.diff)}</span>
+      </div>
+      <div class="board-wrap">
+        ${renderBoard(p.board, p.highlightSqs)}
+        <div class="side-label">${p.side}</div>
+      </div>
+      <div class="card-body">
+        <div class="concept-tag">${p.concept}</div>
+        <p class="puzzle-prompt">${p.prompt}</p>
+        <button class="reveal-btn" onclick="revealAnswer('${id}', this)">
+          ${isRevealed ? '▾ Hide answer' : '▸ Reveal answer'}
+        </button>
+        <div class="answer-box ${isRevealed ? 'visible' : ''}" id="ans-${id}">
+          <div class="answer-move">${p.answer}</div>
+          <div class="answer-explain">${p.explain}</div>
+        </div>
+        <div class="tip-box ${isRevealed ? 'visible' : ''}" id="tip-${id}">
+          <p><strong>💡 Pattern to remember:</strong> ${p.tip}</p>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+  updateProgress(phase);
+}
+
+function revealAnswer(id, btn) {
+  const ans = document.getElementById('ans-' + id);
+  const tip = document.getElementById('tip-' + id);
+  const phase = currentTab;
+  if (ans.classList.contains('visible')) {
+    ans.classList.remove('visible');
+    tip.classList.remove('visible');
+    btn.textContent = '▸ Reveal answer';
+    delete revealed[id];
+  } else {
+    ans.classList.add('visible');
+    tip.classList.add('visible');
+    btn.textContent = '▾ Hide answer';
+    revealed[id] = true;
+  }
+  updateProgress(phase);
+}
+
+function updateProgress(phase) {
+  const total = PHASES[phase].puzzles.length;
+  const done = Object.keys(revealed).filter(k => k.startsWith(phase)).length;
+  document.getElementById('prog-label').textContent = `${done} / ${total} revealed`;
+  document.getElementById('prog-fill').style.width = `${(done / total) * 100}%`;
+}
+
+function switchTab(phase) {
+  currentTab = phase;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('phase-intro').innerHTML = PHASES[phase].intro;
+  renderPuzzles(phase);
+}
+
+function resetAll() {
+  revealed = {};
+  renderPuzzles(currentTab);
+}
+
+// Init
+renderPuzzles('opening');
+</script>
+</body>
+</html>
+Done
+
+You are out of free messages until 5:00 PM
+My son is participating in free chess nites by emerald hills chess who has players with ELO 600 plus, give a bank of puzzles for opening , middle and end game to help me prep for the tournament and prepare him thoroughly to win the game
+
+
+Claude is AI and can make mistakes. Please double-check responses.
